@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Check, Copy, LoaderCircle, NotebookPen, TriangleAlert, Wifi, WifiOff } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Check, Copy, Eraser, LoaderCircle, TriangleAlert, Wifi, WifiOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +21,7 @@ export default function App() {
   useSystemTheme();
   const { text, status, update } = useSharedText();
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const areaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (copyState === 'idle') return;
@@ -31,44 +32,65 @@ export default function App() {
   const StatusIcon = status === 'synced' ? Wifi : status === 'offline' ? WifiOff : LoaderCircle;
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-3xl flex-col gap-4 px-5 py-10">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="flex items-center gap-2 text-base font-semibold tracking-tight">
-          <NotebookPen className="size-4" aria-hidden="true" />
-          ScratchPad
+    <main className="flex min-h-svh flex-col items-center justify-center px-5 py-10">
+      <div className="w-full max-w-2xl">
+        <h1 className="text-center text-5xl font-bold tracking-tight sm:text-6xl">
+          Scratch
+          <span className="font-light text-muted-foreground">Pad</span>
         </h1>
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <StatusIcon className={cn('size-3.5', status === 'connecting' && 'animate-spin')} aria-hidden="true" />
-          {status}
-        </span>
-      </header>
 
-      <Textarea
-        aria-label="Shared scratchpad"
-        placeholder="Start typing…"
-        value={text}
-        onChange={(event) => update(event.target.value)}
-        className="min-h-[45vh] flex-1 resize-none"
-      />
+        <div className="mt-8 rounded-2xl border bg-card shadow-sm transition-colors focus-within:border-ring">
+          <Textarea
+            ref={areaRef}
+            aria-label="Shared scratchpad"
+            placeholder="Start typing…"
+            value={text}
+            onChange={(event) => update(event.target.value)}
+            className="max-h-[45vh] min-h-[132px] resize-none border-0 bg-transparent px-4 py-3.5 shadow-none focus-visible:ring-0"
+          />
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="self-start"
-        onClick={async () => {
-          setCopyState(await copyText(text) ? 'copied' : 'failed');
-        }}
-      >
-        {copyState === 'copied' ? (
-          <Check aria-hidden="true" />
-        ) : copyState === 'failed' ? (
-          <TriangleAlert aria-hidden="true" />
-        ) : (
-          <Copy aria-hidden="true" />
-        )}
-        {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy'}
-      </Button>
+          <div className="flex items-center justify-between gap-3 px-3 pb-3">
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <StatusIcon className={cn('size-3.5', status === 'connecting' && 'animate-spin')} aria-hidden="true" />
+              {status}
+            </span>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={!text}
+                onClick={() => {
+                  update('');
+                  areaRef.current?.focus();
+                }}
+              >
+                <Eraser aria-hidden="true" />
+                Clear
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  setCopyState(await copyText(text) ? 'copied' : 'failed');
+                }}
+              >
+                {copyState === 'copied' ? (
+                  <Check aria-hidden="true" />
+                ) : copyState === 'failed' ? (
+                  <TriangleAlert aria-hidden="true" />
+                ) : (
+                  <Copy aria-hidden="true" />
+                )}
+                {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
