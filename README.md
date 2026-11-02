@@ -2,6 +2,8 @@
 
 One shared text field, live in every browser that has it open. Type in one tab, see it in all the others. That is the whole product.
 
+**English** | [Tiếng Việt](README.vi.md)
+
 ![ScratchPad Light Mode](docs/screenshots/scratchpad-light.png)
 
 <details>
@@ -17,6 +19,7 @@ One shared text field, live in every browser that has it open. Type in one tab, 
 - Realtime sync between every connected browser, over Server-Sent Events
 - Live connection indicator (green pulse when synced)
 - Built-in light / dark mode toggle with persistent preference and system detection
+- Multilingual support with instant language toggle (English / Tiếng Việt)
 - Comfortable button paddings and tactile states
 - One-click copy, with a fallback that works on plain HTTP — no HTTPS or localhost required
 - React 19, Vite, Tailwind v4, shadcn/ui and lucide-react on the front end

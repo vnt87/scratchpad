@@ -1,0 +1,46 @@
+export type Lang = 'en' | 'vi';
+
+export const translations = {
+  en: {
+    liveBadge: 'SSE Live',
+    themeLight: 'Switch to light mode',
+    themeDark: 'Switch to dark mode',
+    langToggle: 'Chuyển sang Tiếng Việt',
+    subtitle: 'One shared text field, live in every browser that has it open.',
+    placeholder: 'Start typing… edits sync instantly to all tabs',
+    ariaTextarea: 'Shared scratchpad',
+    status: {
+      synced: 'Synced',
+      connecting: 'Connecting',
+      offline: 'Offline',
+    },
+    char: 'char',
+    chars: 'chars',
+    clear: 'Clear',
+    copy: 'Copy',
+    copied: 'Copied',
+    copyFailed: 'Copy failed',
+    footer: 'Debounced sync over Server-Sent Events • In-memory • Last-write-wins',
+  },
+  vi: {
+    liveBadge: 'SSE Trực tiếp',
+    themeLight: 'Chuyển sang giao diện sáng',
+    themeDark: 'Chuyển sang giao diện tối',
+    langToggle: 'Switch to English',
+    subtitle: 'Một khung văn bản dùng chung, trực tiếp trên mọi trình duyệt đang mở.',
+    placeholder: 'Bắt đầu gõ… nội dung đồng bộ tức thì đến mọi tab',
+    ariaTextarea: 'Khung ghi chú chia sẻ',
+    status: {
+      synced: 'Đã đồng bộ',
+      connecting: 'Đang kết nối',
+      offline: 'Ngoại tuyến',
+    },
+    char: 'ký tự',
+    chars: 'ký tự',
+    clear: 'Xoá',
+    copy: 'Sao chép',
+    copied: 'Đã sao chép',
+    copyFailed: 'Lỗi sao chép',
+    footer: 'Đồng bộ qua Server-Sent Events • Lưu trên RAM • Ghi đè mới nhất',
+  },
+} as const;

@@ -3,6 +3,7 @@ import {
   Check,
   Copy,
   Eraser,
+  Languages,
   LoaderCircle,
   Moon,
   Sun,
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSharedText } from '@/hooks/use-shared-text';
 import { copyText } from '@/lib/clipboard';
+import { type Lang, translations } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type Theme = 'light' | 'dark';
@@ -42,8 +44,29 @@ function useTheme() {
   return { theme, toggleTheme };
 }
 
+function useLang() {
+  const [lang, setLang] = useState<Lang>(() => {
+    if (typeof window === 'undefined') return 'en';
+    const stored = localStorage.getItem('scratchpad_lang');
+    if (stored === 'en' || stored === 'vi') return stored;
+    return navigator.language.startsWith('vi') ? 'vi' : 'en';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('scratchpad_lang', lang);
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  const toggleLang = () => {
+    setLang((prev) => (prev === 'en' ? 'vi' : 'en'));
+  };
+
+  return { lang, toggleLang, t: translations[lang] };
+}
+
 export default function App() {
   const { theme, toggleTheme } = useTheme();
+  const { lang, toggleLang, t } = useLang();
   const { text, status, update } = useSharedText();
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const areaRef = useRef<HTMLTextAreaElement>(null);
@@ -65,25 +88,40 @@ export default function App() {
             Scratch<span className="font-light text-muted-foreground">Pad</span>
           </span>
           <span className="hidden rounded-full border border-border/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:inline-block">
-            SSE Live
+            {t.liveBadge}
           </span>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={toggleTheme}
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          className="size-8.5 rounded-lg border-border/80 text-muted-foreground hover:text-foreground"
-        >
-          {theme === 'dark' ? (
-            <Sun className="size-4 transition-transform hover:rotate-45" aria-hidden="true" />
-          ) : (
-            <Moon className="size-4 transition-transform hover:-rotate-12" aria-hidden="true" />
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={toggleLang}
+            aria-label={t.langToggle}
+            title={t.langToggle}
+            className="h-8.5 px-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          >
+            <Languages className="size-3.5" aria-hidden="true" />
+            <span className="uppercase">{lang === 'en' ? 'VI' : 'EN'}</span>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? t.themeLight : t.themeDark}
+            title={theme === 'dark' ? t.themeLight : t.themeDark}
+            className="size-8.5 rounded-lg border-border/80 text-muted-foreground hover:text-foreground"
+          >
+            {theme === 'dark' ? (
+              <Sun className="size-4 transition-transform hover:rotate-45" aria-hidden="true" />
+            ) : (
+              <Moon className="size-4 transition-transform hover:-rotate-12" aria-hidden="true" />
+            )}
+          </Button>
+        </div>
       </header>
 
       {/* Main pad area */}
@@ -93,16 +131,14 @@ export default function App() {
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
               Scratch<span className="font-light text-muted-foreground">Pad</span>
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              One shared text field, live in every browser that has it open.
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">{t.subtitle}</p>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20">
             <Textarea
               ref={areaRef}
-              aria-label="Shared scratchpad"
-              placeholder="Start typing… edits sync instantly to all tabs"
+              aria-label={t.ariaTextarea}
+              placeholder={t.placeholder}
               value={text}
               onChange={(event) => update(event.target.value)}
               className="min-h-[180px] max-h-[50vh] resize-y border-0 bg-transparent px-5 py-4 text-base leading-relaxed placeholder:text-muted-foreground/60 focus-visible:ring-0"
@@ -134,13 +170,13 @@ export default function App() {
                   className={cn('size-3.5', status === 'connecting' && 'animate-spin')}
                   aria-hidden="true"
                 />
-                <span className="capitalize">{status}</span>
+                <span>{t.status[status]}</span>
               </span>
 
               <div className="flex items-center gap-2">
                 {text.length > 0 && (
                   <span className="mr-1 hidden text-[11px] text-muted-foreground/70 sm:inline-block">
-                    {text.length} {text.length === 1 ? 'char' : 'chars'}
+                    {text.length} {text.length === 1 ? t.char : t.chars}
                   </span>
                 )}
 
@@ -156,7 +192,7 @@ export default function App() {
                   className="px-3.5 py-1.5"
                 >
                   <Eraser className="size-3.5" aria-hidden="true" />
-                  Clear
+                  {t.clear}
                 </Button>
 
                 <Button
@@ -179,15 +215,13 @@ export default function App() {
                   ) : (
                     <Copy className="size-3.5" aria-hidden="true" />
                   )}
-                  {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy'}
+                  {copyState === 'copied' ? t.copied : copyState === 'failed' ? t.copyFailed : t.copy}
                 </Button>
               </div>
             </div>
           </div>
 
-          <p className="mt-4 text-center text-xs text-muted-foreground/70">
-            Debounced sync over Server-Sent Events • In-memory • Last-write-wins
-          </p>
+          <p className="mt-4 text-center text-xs text-muted-foreground/70">{t.footer}</p>
         </div>
       </main>
     </div>
