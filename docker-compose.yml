@@ -1,0 +1,6 @@
+services:
+  scratchpad:
+    image: ghcr.io/vnt87/scratchpad:latest
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
