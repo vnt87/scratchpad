@@ -2,9 +2,22 @@
 
 One shared text field, live in every browser that has it open. Type in one tab, see it in all the others. That is the whole product.
 
+![ScratchPad Light Mode](docs/screenshots/scratchpad-light.png)
+
+<details>
+  <summary>🌙 Click to view Dark Mode preview</summary>
+
+  <br />
+
+  ![ScratchPad Dark Mode](docs/screenshots/scratchpad-dark.png)
+</details>
+
 ## Features
 
 - Realtime sync between every connected browser, over Server-Sent Events
+- Live connection indicator (green pulse when synced)
+- Built-in light / dark mode toggle with persistent preference and system detection
+- Comfortable button paddings and tactile states
 - One-click copy, with a fallback that works on plain HTTP — no HTTPS or localhost required
 - React 19, Vite, Tailwind v4, shadcn/ui and lucide-react on the front end
 - Zero runtime dependencies on the back end — the sync API is Node's built-in `http`
@@ -40,6 +53,52 @@ npm run typecheck
 ## How it works
 
 `server.js` keeps the current text in memory and holds one open SSE connection per browser.
+
+### Architecture Overview
+
+```
+┌────────────────────────────────────────────────────────┐
+│                       BROWSER TABS                     │
+│  ┌───────────────────────┐   ┌───────────────────────┐  │
+│  │    Browser Tab A      │   │    Browser Tab B      │  │
+│  │  (useSharedText hook) │   │  (useSharedText hook) │  │
+│  └───────┬────────▲──────┘   └───────┬────────▲──────┘  │
+└──────────┼────────┼──────────────────┼────────┼────────┘
+     POST /api/text │            POST /api/text │
+   (debounced 120ms)│          (debounced 120ms)│
+           │   GET /api/events         │   GET /api/events
+           │     (SSE Stream)          │     (SSE Stream)
+           ▼        │                  ▼        │
+┌───────────────────┴───────────────────────────┴────────┐
+│               SCRATCHPAD SERVER (Node.js)              │
+│                                                        │
+│  • In-Memory Text State: `let text = ''`               │
+│  • Client Set: `clients = Set<Response>()`             │
+│  • Static File Serving: `/dist` (Vite + React)         │
+└────────────────────────────────────────────────────────┘
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Browser A as Browser Tab A
+    participant Server as Node.js Server
+    actor Browser B as Browser Tab B
+
+    Note over Browser A,Browser B: 1. Connection Initialization
+    Browser A->>Server: GET /api/events (SSE)
+    Server-->>Browser A: Stream initial text: data: {"text": "..."}
+    Browser B->>Server: GET /api/events (SSE)
+    Server-->>Browser B: Stream initial text: data: {"text": "..."}
+
+    Note over Browser A,Browser B: 2. Realtime Synchronization
+    Browser A->>Browser A: User edits (debounced 120ms)
+    Browser A->>Server: POST /api/text (body: text)
+    Server->>Server: Update in-memory text state
+    Server-->>Browser A: 204 No Content
+    Server--)Browser B: SSE broadcast: data: {"text": "..."}
+    Browser B->>Browser B: Update editor textarea
+```
 
 | Endpoint | Purpose |
 | --- | --- |
