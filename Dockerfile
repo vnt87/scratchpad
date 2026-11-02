@@ -9,9 +9,12 @@ COPY public ./public
 COPY src ./src
 RUN npm run build
 
-FROM node:22-alpine AS runtime
+FROM alpine:latest AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
+
+# Minimal modular nodejs runtime from Alpine (drops npm, corepack, headers, ICU bloat)
+RUN apk add --no-cache nodejs && adduser -D -u 1000 node
 
 COPY package.json ./
 COPY server.js ./

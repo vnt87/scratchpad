@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { GithubIcon } from '@/components/ui/icons';
 import { Textarea } from '@/components/ui/textarea';
 import { useSharedText } from '@/hooks/use-shared-text';
 import { copyText } from '@/lib/clipboard';
@@ -224,6 +225,22 @@ export default function App() {
           <p className="mt-4 text-center text-xs text-muted-foreground/70">{t.footer}</p>
         </div>
       </main>
+
+      {/* Persistent footer */}
+      <footer className="flex items-center justify-center gap-2 pb-6 text-xs text-muted-foreground/80 select-none">
+        <span>Made with ❤️ by Nam Vu</span>
+        <span aria-hidden="true">•</span>
+        <a
+          href="https://github.com/vnt87/scratchpad"
+          target="_blank"
+          rel="noreferrer noopener"
+          className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
+          aria-label="GitHub repository"
+        >
+          <GithubIcon className="size-3.5" aria-hidden="true" />
+          <span>GitHub</span>
+        </a>
+      </footer>
     </div>
   );
 }
