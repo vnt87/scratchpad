@@ -4,6 +4,8 @@ Một khung văn bản dùng chung, trực tiếp trên mọi trình duyệt đa
 
 [English](README.md) | **Tiếng Việt**
 
+> ⚡ **Container siêu tối giản: ~2.4 MB khi tải về (6 MB trên ổ đĩa).** Xây dựng trên nền `scratch` rỗng với binary Go biên dịch tĩnh và nhúng toàn bộ web assets. Không thừa thãi hệ điều hành, không dependency phụ thuộc, khởi động tức thì, chạy với quyền non-root bảo mật.
+
 ![ScratchPad Giao diện sáng](docs/screenshots/scratchpad-light.png)
 
 <details>
@@ -14,19 +16,21 @@ Một khung văn bản dùng chung, trực tiếp trên mọi trình duyệt đa
   ![ScratchPad Giao diện tối](docs/screenshots/scratchpad-dark.png)
 </details>
 
-## Tính năng
+## Điểm nhấn & Tính năng
 
-- Đồng bộ thời gian thực giữa mọi trình duyệt đang kết nối qua Server-Sent Events
-- Trạng thái kết nối trực quan (đèn xanh báo hiệu khi đã đồng bộ)
-- Tích hợp chuyển đổi giao diện sáng / tối (light/dark mode) với bộ nhớ lưu trữ và tự nhận diện hệ điều hành
-- Hỗ trợ đa ngôn ngữ với nút chuyển đổi tức thì (English / Tiếng Việt)
-- Khoảng đệm (padding) nút bấm thoải mái, phản hồi tương tác mượt mà
-- Sao chép 1 chạm với cơ chế dự phòng hoạt động trên HTTP thường — không cần HTTPS hay localhost
-- Frontend dùng React 19, Vite, Tailwind v4, shadcn/ui và lucide-react
-- Backend không có dependency bên ngoài — sync API dùng module `http` có sẵn của Node.js
-- Container đơn gọn nhẹ, không cần cơ sở dữ liệu, không cần secret khi build
+- **Kích thước container siêu nhẹ**: Chỉ ~2.4 MB tải về từ Docker / GHCR, không dependency runtime, chạy trực tiếp trên image `scratch`
+- **Đồng bộ thời gian thực**: Đồng bộ trực tiếp giữa mọi trình duyệt đang kết nối qua Server-Sent Events (SSE)
+- **Trạng thái kết nối trực quan**: Đèn báo hiệu nhấp nháy xanh lá khi đã kết nối đồng bộ
+- **Giao diện sáng / tối**: Nút bấm chuyển đổi nhanh, tự nhận diện hệ điều hành và lưu cấu hình vào `localStorage`
+- **Hỗ trợ song ngữ**: Chuyển đổi ngôn ngữ tức thời (English / Tiếng Việt)
+- **Thiết kế tối ưu**: Khoảng đệm (padding) nút bấm cân đối, bộ đếm ký tự và hiệu ứng phản hồi mượt mà
+- **Sao chép 1 chạm**: Sao chép clipboard có fallback hỗ trợ cả HTTP thường (không cần HTTPS hay localhost)
+- **Công nghệ frontend**: React 19, Vite, Tailwind v4, shadcn/ui và icon Lucide
+- **Lập trình nội bộ linh hoạt**: Hỗ trợ chạy bằng cả `node server.js` (không cần cài thêm npm package ngoài) lẫn `go run server.go`
 
 ## Khởi động nhanh
+
+Khởi chạy container siêu nhẹ trực tiếp từ GitHub Container Registry:
 
 ```bash
 docker run -d -p 8787:8787 ghcr.io/vnt87/scratchpad:latest
@@ -42,19 +46,38 @@ Hoặc dùng Docker Compose:
 docker compose up -d
 ```
 
+## So sánh kích thước Docker Image
+
+| Phiên bản đóng gói | Base Image | Dung lượng ổ đĩa | Dung lượng tải về (Registry) |
+|---|---|---|---|
+| **Bản gốc** | `node:22-alpine` | ~168 MB | ~62 MB |
+| **Alpine rút gọn** | `alpine:latest` + Node | ~77 MB | ~29 MB |
+| **ScratchPad Extreme (Hiện tại)** | `scratch` + Go static binary | **~6 MB** | **~2.4 MB** *(Nhẹ hơn 96%)* |
+
 ## Phát triển
 
+Bạn có thể chạy backend bằng Node.js hoặc Go tuỳ chọn:
+
 ```bash
+# 1. Cài đặt thư viện frontend
 npm ci
-npm run dev         # Vite chạy trên :5173, proxy /api sang Node server ở :8787
-npm start           # phục vụ thư mục dist/ và sync API (cần chạy `npm run build` trước)
+
+# 2. Khởi chạy Vite dev server (:5173, tự động proxy /api sang :8787)
+npm run dev
+
+# 3. Build bản phát hành
 npm run build
 npm run typecheck
+
+# 4. Chạy server
+npm start          # Backend Node.js (server.js)
+# hoặc:
+go run server.go   # Backend Go static (server.go)
 ```
 
 ## Cơ chế hoạt động
 
-`server.js` lưu trữ nội dung văn bản hiện tại trong bộ nhớ RAM và duy trì một kết nối SSE mở cho mỗi trình duyệt.
+Server lưu trữ nội dung văn bản hiện tại trong bộ nhớ RAM và duy trì một kết nối SSE mở cho mỗi trình duyệt.
 
 ### Sơ đồ kiến trúc
 
@@ -72,11 +95,11 @@ npm run typecheck
            │     (Luồng SSE)           │     (Luồng SSE)
            ▼        │                  ▼        │
 ┌───────────────────┴───────────────────────────┴────────┐
-│               SCRATCHPAD SERVER (Node.js)              │
+│         SCRATCHPAD SERVER (Go Static / Node.js)        │
 │                                                        │
-│  • Trạng thái văn bản trong RAM: `let text = ''`       │
-│  • Danh sách kết nối: `clients = Set<Response>()`      │
-│  • Phục vụ static file: `/dist` (Vite + React build)   │
+│  • Quản lý văn bản trong RAM (khoá an toàn Mutex)      │
+│  • Kênh phân phối SSE (Hub quản lý các kết nối)        │
+│  • Nhúng sẵn toàn bộ assets tĩnh (/dist Vite + React)  │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -84,7 +107,7 @@ npm run typecheck
 sequenceDiagram
     autonumber
     actor Browser A as Tab Trình duyệt A
-    participant Server as Node.js Server
+    participant Server as ScratchPad Server
     actor Browser B as Tab Trình duyệt B
 
     Note over Browser A,Browser B: 1. Khởi tạo kết nối
@@ -104,9 +127,9 @@ sequenceDiagram
 
 | Điểm cuối (Endpoint) | Mục đích |
 | --- | --- |
-| `GET /api/events` | Truyền luồng văn bản hiện tại khi kết nối và mỗi khi có thay đổi |
-| `POST /api/text` | Thay thế văn bản bằng nội dung yêu cầu và phát thông báo đến mọi listener |
-| `GET /*` | Phục vụ ứng dụng React đã build từ thư mục `dist/` |
+| `GET /api/events` | Truyền luồng văn bản hiện tại khi kết nối và phát thông báo khi có thay đổi |
+| `POST /api/text` | Cập nhật văn bản và phát thông báo đến mọi listener |
+| `GET /*` | Phục vụ trực tiếp các file tĩnh nhúng sẵn (`dist/`) với bộ nhớ đệm immutable |
 
 [`use-shared-text`](src/hooks/use-shared-text.ts) khử rung các chỉnh sửa cục bộ (120 ms) trước khi gửi lên máy chủ và áp dụng các cập nhật nhận về vào ô soạn thảo.
 
@@ -125,7 +148,7 @@ sequenceDiagram
 ## Xuất bản Docker Image
 
 Đẩy mã lên nhánh `main` hoặc gắn thẻ phiên bản (`v1.2.3`) sẽ kích hoạt
-[Build and publish image](.github/workflows/build-and-publish.yml), tự động build container và
+[Build and publish image](.github/workflows/build-and-publish.yml), tự động build container dung lượng siêu nhỏ ~2.4 MB và
 đẩy `latest`, tên nhánh, tag và `sha-*` lên `ghcr.io/vnt87/scratchpad`.
 
 ## Giấy phép
